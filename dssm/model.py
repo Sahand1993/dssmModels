@@ -1,6 +1,7 @@
 import tensorflow as tf
 from DSSM.helpers.helpers import cosine_similarity
 import os
+from DSSM.dssm.config import *
 
 NO_OF_TRIGRAMS = int(os.popen("wc -l \"$THESIS_PROCESSED_DATA_DIR/trigrams.txt\"").read().split()[0]) - 1
 

@@ -1,5 +1,4 @@
 from DSSM.batchiterators.fileiterators import NaturalQuestionsFileIterator
-BATCH_SIZE = 10
 from DSSM.dssm.model import *
 import numpy as np
 from tqdm import tqdm
