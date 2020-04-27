@@ -2,7 +2,6 @@ import tensorflow as tf
 from DSSM.helpers.helpers import cosine_similarity
 import os
 
-BATCH_SIZE = 1024
 NO_OF_TRIGRAMS = int(os.popen("wc -l \"$THESIS_PROCESSED_DATA_DIR/trigrams.txt\"").read().split()[0]) - 1
 
 tf.compat.v1.disable_eager_execution()

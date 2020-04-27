@@ -1,4 +1,5 @@
 from DSSM.batchiterators.fileiterators import NaturalQuestionsFileIterator
+BATCH_SIZE = 10
 from DSSM.dssm.model import *
 import numpy as np
 from tqdm import tqdm
@@ -6,9 +7,9 @@ from matplotlib import pyplot as plt
 
 from DSSM.helpers.helpers import correct_guesses_of_dssm
 
-init = tf.global_variables_initializer()
+init = tf.compat.v1.global_variables_initializer()
 
-saver = tf.train.Saver()
+saver = tf.compat.v1.train.Saver()
 
 # First just train on nq
 def get_feed_dict(batch):
@@ -60,7 +61,7 @@ def update_plot(data1, data2):
     fig.canvas.start_event_loop(0.001)
 
 
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
     sess.run(init)
 
     train_epoch_accuracies = []
@@ -68,12 +69,12 @@ with tf.Session() as sess:
     val_epoch_accuracies = []
     val_losses = []
 
-    trainingSet = NaturalQuestionsFileIterator("/Users/sahandzarrinkoub/School/year5/thesis/DSSM/preprocessed_backup/nq/train.csv",
-                                               batch_size = 128,
+    trainingSet = NaturalQuestionsFileIterator("/Users/sahandzarrinkoub/School/year5/thesis/datasets/preprocessed_backup/nq/smalltrain.csv",
+                                               batch_size = BATCH_SIZE,
                                                no_of_irrelevant_samples = 4,
                                                encodingType="NGRAM")
-    validationSet = NaturalQuestionsFileIterator("/Users/sahandzarrinkoub/School/year5/thesis/DSSM/preprocessed_backup/nq/validation.csv",
-                                                 batch_size=128,
+    validationSet = NaturalQuestionsFileIterator("/Users/sahandzarrinkoub/School/year5/thesis/datasets/preprocessed_backup/nq/smallvalidation.csv",
+                                                 batch_size=BATCH_SIZE,
                                                  no_of_irrelevant_samples=4,
                                                  encodingType="NGRAM")
     for epoch in range(10):
