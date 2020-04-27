@@ -22,10 +22,11 @@ class FileIterator(ABC):
     def __next__(self) -> DataPointBatch:
         indices: List[int] = self._traversal_order[self.current_idx: self.current_idx + self._batch_size]
         self.current_idx += self._batch_size
-        if len(indices) == 0:
+        if len(indices) < self._batch_size:
             raise StopIteration
 
         return DataPointBatch(self.get_samples(indices), self._no_of_irrelevant_samples)
+
 
     @abstractmethod
     def get_samples(self, ids: List[int]) -> List[DataPoint]:
@@ -43,14 +44,15 @@ class FileIterator(ABC):
 
 
     def __len__(self):
-        rest = len(self._traversal_order) % self._batch_size
-        return len(self._traversal_order) // self._batch_size + (1 if rest else 0)
+        return len(self._traversal_order) // self._batch_size
+
 
     def __iter__(self):
         return self
 
+
     def getNoOfDataPoints(self):
-        return len(self._traversal_order)
+        return (len(self._traversal_order) // self._batch_size) * self._batch_size
 
 
 class QuoraFileIterator(FileIterator):
