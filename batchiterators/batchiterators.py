@@ -1,7 +1,9 @@
 import numpy as np
+import os
 
 from typing import List, Iterable, Set
 import random
+from DSSM.dssm.config import *
 
 
 DEFAULT_IRRELEVANT_SAMPLES = 4
@@ -12,17 +14,17 @@ CSV_SEPARATOR = ";"
 
 def createFilteredVocab() -> Set:
     FILTERED_WORD_INDICES = set()
-    for line in open("/Users/sahandzarrinkoub/School/year5/thesis/DSSM/preprocessed_datasets/vocabulary.txt").readlines():
+    for line in open(os.environ["THESIS_PROCESSED_DATA_DIR"] + "/vocabulary.txt").readlines():
         wordId, word, count = line.split()
         count = int(count)
         wordId = int(wordId)
-        if count > 20:
+        if count > MINFREQ_WORDS:
             FILTERED_WORD_INDICES.add(wordId)
 
     return FILTERED_WORD_INDICES
 
 
-#FILTERED_WORD_INDICES = createFilteredVocab() # TODO: Uncomment
+FILTERED_WORD_INDICES = createFilteredVocab()
 
 
 def toints(strings) -> List[int]:
