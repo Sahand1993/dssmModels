@@ -8,7 +8,7 @@ from DSSM.batchiterators.batchiterators import DataPoint, DataPointFactory, read
 
 class FileIterator(ABC):
 
-    def __init__(self, batch_size = 5, no_of_irrelevant_samples = 4, encodingType ="NGRAM", path=None):
+    def __init__(self, batch_size = 5, no_of_irrelevant_samples = 4, encodingType ="NGRAM", path=None, dense=False):
         if path:
             self._file = open(path)
             self._file.readline()
@@ -17,13 +17,18 @@ class FileIterator(ABC):
         self._traversal_order: List[int] = None
         self.current_idx = 0
         self._encodingType = encodingType
+        self._dense = dense
 
 
     def __next__(self) -> DataPointBatch:
         indices: List[int] = self._traversal_order[self.current_idx: self.current_idx + self._batch_size]
         self.current_idx += self._batch_size
-        if len(indices) < self._batch_size:
-            raise StopIteration
+        if self._dense:
+            if len(indices) == 0:
+                raise StopIteration
+        else:
+            if len(indices) < self._batch_size:
+                raise StopIteration
 
         return DataPointBatch(self.get_samples(indices), self._no_of_irrelevant_samples)
 
@@ -44,7 +49,11 @@ class FileIterator(ABC):
 
 
     def __len__(self):
-        return len(self._traversal_order) // self._batch_size
+        if self._dense:
+            rest = len(self._traversal_order) % self._batch_size
+            return len(self._traversal_order) // self._batch_size + (1 if rest else 0)
+        else:
+            return len(self._traversal_order) // self._batch_size
 
 
     def __iter__(self):
@@ -52,16 +61,20 @@ class FileIterator(ABC):
 
 
     def getNoOfDataPoints(self):
-        return (len(self._traversal_order) // self._batch_size) * self._batch_size
+        if self._dense:
+            return len(self._traversal_order)
+        else:
+            return (len(self._traversal_order) // self._batch_size) * self._batch_size
 
 
 class QuoraFileIterator(FileIterator):
 
-    def __init__(self, csvPath:str, batch_size = 5, no_of_irrelevant_samples = 4, encodingType="NGRAM"):
+    def __init__(self, csvPath:str, batch_size = 5, no_of_irrelevant_samples = 4, encodingType="NGRAM", dense=False):
         super().__init__(batch_size,
                          no_of_irrelevant_samples,
                          encodingType,
-                         csvPath)
+                         csvPath,
+                         dense)
         self._questionIdToDuplicates: Dict[int, List[int]] = dict()
         self._pairIdToQuestionPair: Dict[int, Tuple[str, str]] = dict()
         self._questionIdToIndices: Dict[int, str] = dict()
@@ -142,7 +155,7 @@ class QuoraFileIterator(FileIterator):
 
 
 class NaturalQuestionsFileIterator(FileIterator):
-    def __init__(self, path: str, batch_size = 5, no_of_irrelevant_samples = 4, encodingType="NGRAM"):
+    def __init__(self, path: str, batch_size = 5, no_of_irrelevant_samples = 4, encodingType="NGRAM", dense=False):
         """
 
         :param path:
@@ -150,7 +163,7 @@ class NaturalQuestionsFileIterator(FileIterator):
         :param no_of_irrelevant_samples:
         :param encodingType: Can be NGRAM or WORD. Determines which document representation will be used.
         """
-        super().__init__(batch_size, no_of_irrelevant_samples, encodingType, path)
+        super().__init__(batch_size, no_of_irrelevant_samples, encodingType, path, dense)
         self._questionDocumentPairs: List[List[str]] = readCsvLines(self._file)
         self._traversal_order = list(range(len(self._questionDocumentPairs)))
         random.shuffle(self._traversal_order)
@@ -205,7 +218,7 @@ class NaturalQuestionsFileIterator(FileIterator):
 
 
 class ReutersFileIterator(FileIterator):
-    def __init__(self, dataSetPathJson: str, set = "train", batch_size = 5, no_of_irrelevant_samples = 4, encodingType="NGRAM"):
+    def __init__(self, dataSetPathJson: str, set = "train", batch_size = 5, no_of_irrelevant_samples = 4, encodingType="NGRAM", dense=False):
         """
 
         :param set: either "train" or "val"
@@ -214,12 +227,12 @@ class ReutersFileIterator(FileIterator):
         :param no_of_irrelevant_samples:
         :param encodingType:
         """
-        super().__init__(batch_size, no_of_irrelevant_samples, encodingType)
+        super().__init__(batch_size, no_of_irrelevant_samples, encodingType, dense=dense)
         self._idToArticle: Dict[int, Dict] = dict()
         self._tagToId: Dict[str, Set] = dict()
         self.NON_TAG_KEYS = ["queryArticleNGramIndices", "queryArticleWordIndices", "relevantId", "articleId", "id"]
         self._index()
-        self._traversal_order: List[int] = self._getArticleIdsFromFile(dataSetPathJson)
+        self._traversal_order: List[int] = self._getArticleIdsFromFile(dataSetPathJson) # TODO: Select as many as in natural questions
         random.shuffle(self._traversal_order)
         self.ARTICLENGRAMS_CSVIDX = None # TODO
         self.TAG_KEYS = [
